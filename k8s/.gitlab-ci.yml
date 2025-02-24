@@ -1,0 +1,45 @@
+stages:
+  
+build
+push
+deploy
+
+variables:
+  IMAGE: "registry.gitlab.com/USERNAME/my-app"
+  KUBE_NAMESPACE: "default"
+
+before_script:
+  
+echo $CI_REGISTRY_PASSWORD | docker login -u $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+1️⃣ BUILD: Docker-Image erstellen
+build:
+  stage: build
+  script:
+    
+docker build -t $IMAGE:$CI_COMMIT_SHORT_SHA .
+only:
+main
+
+2️⃣ PUSH: Image in die Registry hochladen
+push:
+  stage: push
+  script:
+    
+docker push $IMAGE:$CI_COMMIT_SHORT_SHA
+only:
+main
+
+3️⃣ DEPLOY: Kubernetes Deployment aktualisieren
+deploy:
+  stage: deploy
+  script:
+    
+kubectl config set-cluster my-cluster --server=$KUBE_SERVER
+kubectl config set-credentials gitlab --token=$KUBE_TOKEN
+kubectl config set-context my-cluster --cluster=my-cluster --user=gitlab
+kubectl config use-context my-cluster
+kubectl set image deployment/my-app my-app=$IMAGE:$CI_COMMIT_SHORT_SHA -n $KUBE_NAMESPACE
+kubectl rollout status deployment/my-app -n $KUBE_NAMESPACE
+only:
+main
