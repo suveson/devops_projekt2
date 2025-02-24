@@ -34,12 +34,6 @@ main
 deploy:
   stage: deploy
   script:
-    
-kubectl config set-cluster my-cluster --server=$KUBE_SERVER
-kubectl config set-credentials gitlab --token=$KUBE_TOKEN
-kubectl config set-context my-cluster --cluster=my-cluster --user=gitlab
-kubectl config use-context my-cluster
-kubectl set image deployment/my-app my-app=$IMAGE:$CI_COMMIT_SHORT_SHA -n $KUBE_NAMESPACE
-kubectl rollout status deployment/my-app -n $KUBE_NAMESPACE
+    helm upgrade --install my-app helm/ --set image.tag=$CI_COMMIT_SHORT_SHA
 only:
 main
